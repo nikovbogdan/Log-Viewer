@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log File Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .upload-section {
+            padding: 30px;
+            text-align: center;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+            text-transform: uppercase;
+        }
+
+        .stat-item.errors .stat-value {
+            color: #dc3545;
+        }
+
+        .stat-item.warnings .stat-value {
+            color: #ffc107;
+        }
+
+        .filters {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid #dee2e6;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .filter-btn.error {
+            border-color: #dc3545;
+            color: #dc3545;
+        }
+
+        .filter-btn.error.active {
+            background: #dc3545;
+            color: white;
+        }
+
+        .filter-btn.warning {
+            border-color: #ffc107;
+            color: #856404;
+        }
+
+        .filter-btn.warning.active {
+            background: #ffc107;
+            color: #856404;
+        }
+
+        .filter-btn.info {
+            border-color: #17a2b8;
+            color: #17a2b8;
+        }
+
+        .filter-btn.info.active {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .log-viewer {
+            padding: 30px;
+            min-height: 400px;
+            max-height: 600px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+
+        .log-line {
+            padding: 4px 8px;
+            margin: 2px 0;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            position: relative;
+            padding-right: 80px;
+        }
+
+        .log-line:hover .copy-btn {
+            opacity: 1;
+        }
+
+        .copy-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            opacity: 0;
+            transition: all 0.2s;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .copy-btn:hover {
+            background: #5568d3;
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        .copy-btn.copied {
+            background: #28a745;
+            opacity: 1;
+        }
+
+        .log-line.error {
+            background: rgba(220, 53, 69, 0.2);
+            border-left: 4px solid #dc3545;
+            color: #ff6b6b;
+        }
+
+        .log-line.warning {
+            background: rgba(255, 193, 7, 0.2);
+            border-left: 4px solid #ffc107;
+            color: #ffd93d;
+        }
+
+        .log-line.info {
+            background: rgba(23, 162, 184, 0.1);
+            border-left: 4px solid #17a2b8;
+            color: #4dd0e1;
+        }
+
+        .log-line.debug {
+            color: #9e9e9e;
+        }
+
+        .log-line.hidden {
+            display: none;
+        }
+
+        .timestamp {
+            color: #4ec9b0;
+            font-weight: 600;
+        }
+
+        .level {
+            font-weight: bold;
+            margin: 0 8px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 8px 16px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .no-errors-message {
+            text-align: center;
+            padding: 40px 20px;
+            background: rgba(40, 167, 69, 0.1);
+            border-radius: 8px;
+            margin: 20px;
+        }
+
+        .no-errors-message h3 {
+            color: #28a745;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .no-errors-message p {
+            color: #6c757d;
+        }
+
+        .navigation {
+            padding: 15px 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+            display: none;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .go-to-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+        }
+
+        .go-to-row input {
+            width: 80px;
+            padding: 6px 10px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .go-to-row input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .go-to-row button {
+            padding: 6px 14px;
+            border: 2px solid #17a2b8;
+            background: white;
+            color: #17a2b8;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .go-to-row button:hover {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .nav-btn {
+            padding: 8px 16px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .nav-btn.jump {
+            border-color: #dc3545;
+            color: #dc3545;
+        }
+
+        .nav-btn.jump:hover:not(:disabled) {
+            background: #dc3545;
+            color: white;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background: #667eea;
+            color: white;
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            border-color: #dee2e6;
+            color: #dee2e6;
+        }
+
+        .nav-info {
+            font-size: 14px;
+            color: #6c757d;
+            font-weight: 600;
+        }
+
+        .log-line.highlight {
+            animation: highlight 1s ease-in-out;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+        }
+
+        @keyframes highlight {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Log File Error Analyzer</h1>
+            <p>Upload your .log file to automatically detect and highlight errors, warnings, and other log levels</p>
+        </div>
+
+        <div class="upload-section">
+            <button class="upload-btn" onclick="document.getElementById('fileInput').click()">Choose Log File</button>
+            <input type="file" id="fileInput" accept=".log,.txt" style="display: none;">
+            <p id="fileName" style="margin-top: 15px; color: #6c757d; font-size: 14px;"></p>
+        </div>
+
+        <div class="stats" id="stats" style="display: none;">
+            <div class="stat-item">
+                <div class="stat-value" id="totalLines">0</div>
+                <div class="stat-label">Total Lines</div>
+            </div>
+            <div class="stat-item errors">
+                <div class="stat-value" id="errorCount">0</div>
+                <div class="stat-label">Errors</div>
+            </div>
+            <div class="stat-item warnings">
+                <div class="stat-value" id="warningCount">0</div>
+                <div class="stat-label">Warnings</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="infoCount">0</div>
+                <div class="stat-label">Info</div>
+            </div>
+        </div>
+
+        <div class="filters" id="filters" style="display: none;">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn error" data-filter="error">Errors Only</button>
+            <button class="filter-btn warning" data-filter="warning">Warnings Only</button>
+            <button class="filter-btn info" data-filter="info">Info Only</button>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search in logs...">
+            </div>
+        </div>
+
+        <div class="navigation" id="navigation">
+            <button class="nav-btn" id="prevBtn">
+                <span>◀</span> Previous
+            </button>
+            <div class="nav-info" id="navInfo">Error 1 of 5</div>
+            <button class="nav-btn" id="nextBtn">
+                Next <span>▶</span>
+            </button>
+            <button class="nav-btn jump" id="lastErrorBtn">
+                Go to Last Error <span>⏭</span>
+            </button>
+            <div class="go-to-row">
+                <label style="font-size: 14px; color: #6c757d; font-weight: 600;">Go to Row:</label>
+                <input type="number" id="rowInput" min="1" placeholder="Line #">
+                <button id="goToRowBtn">Go</button>
+            </div>
+        </div>
+
+        <div class="log-viewer" id="logViewer">
+            <div class="empty-state">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <h3>No log file loaded</h3>
+                <p>Upload a .log file to begin analysis</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allLines = [];
+        let currentFilter = 'all';
+        let searchTerm = '';
+        let errorWarningLines = [];
+        let currentErrorIndex = 0;
+
+        const fileInput = document.getElementById('fileInput');
+        const logViewer = document.getElementById('logViewer');
+        const fileName = document.getElementById('fileName');
+        const stats = document.getElementById('stats');
+        const filters = document.getElementById('filters');
+        const searchInput = document.getElementById('searchInput');
+        const navigation = document.getElementById('navigation');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const navInfo = document.getElementById('navInfo');
+        const lastErrorBtn = document.getElementById('lastErrorBtn');
+        const rowInput = document.getElementById('rowInput');
+        const goToRowBtn = document.getElementById('goToRowBtn');
+
+        fileInput.addEventListener('change', handleFileSelect);
+        searchInput.addEventListener('input', handleSearch);
+        prevBtn.addEventListener('click', () => navigateError(-1));
+        nextBtn.addEventListener('click', () => navigateError(1));
+        lastErrorBtn.addEventListener('click', jumpToLastError);
+        goToRowBtn.addEventListener('click', goToRow);
+        rowInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') goToRow();
+        });
+
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentFilter = this.dataset.filter;
+                renderLogs();
+            });
+        });
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            fileName.textContent = `📄 ${file.name}`;
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const content = event.target.result;
+                parseLog(content);
+            };
+            reader.readAsText(file);
+        }
+
+        function parseLog(content) {
+            const lines = content.split('\n');
+            allLines = [];
+            
+            let errorCount = 0;
+            let warningCount = 0;
+            let infoCount = 0;
+
+            lines.forEach((line, index) => {
+                if (!line.trim()) return;
+
+                let level = 'debug';
+                const lineLower = line.toLowerCase();
+
+                if (lineLower.includes('error') || lineLower.includes('fatal') || lineLower.includes('exception')) {
+                    level = 'error';
+                    errorCount++;
+                } else if (lineLower.includes('warn')) {
+                    level = 'warning';
+                    warningCount++;
+                } else if (lineLower.includes('info')) {
+                    level = 'info';
+                    infoCount++;
+                }
+
+                allLines.push({
+                    text: line,
+                    level: level,
+                    index: index + 1
+                });
+            });
+
+            document.getElementById('totalLines').textContent = allLines.length;
+            document.getElementById('errorCount').textContent = errorCount;
+            document.getElementById('warningCount').textContent = warningCount;
+            document.getElementById('infoCount').textContent = infoCount;
+
+            stats.style.display = 'flex';
+            filters.style.display = 'flex';
+
+            errorWarningLines = allLines.filter(line => line.level === 'error' || line.level === 'warning');
+            
+            if (errorWarningLines.length > 0) {
+                navigation.style.display = 'flex';
+                currentErrorIndex = 0;
+                updateNavigationInfo();
+            } else {
+                navigation.style.display = 'none';
+            }
+
+            renderLogs();
+        }
+
+        function handleSearch(e) {
+            searchTerm = e.target.value.toLowerCase();
+            renderLogs();
+        }
+
+        function renderLogs() {
+            logViewer.innerHTML = '';
+
+            const filtered = allLines.filter(line => {
+                const matchesFilter = currentFilter === 'all' || line.level === currentFilter;
+                const matchesSearch = searchTerm === '' || line.text.toLowerCase().includes(searchTerm);
+                return matchesFilter && matchesSearch;
+            });
+
+            if (filtered.length === 0) {
+                logViewer.innerHTML = '<div class="empty-state"><h3>No matching logs found</h3><p>Try adjusting your filters or search term</p></div>';
+                return;
+            }
+
+            const hasErrorsOrWarnings = allLines.some(line => line.level === 'error' || line.level === 'warning');
+            
+            if (!hasErrorsOrWarnings) {
+                logViewer.innerHTML = `
+                    <div class="no-errors-message">
+                        <h3>✅ No errors here</h3>
+                        <p>Your log file looks clean - no errors or warnings detected!</p>
+                    </div>
+                `;
+            }
+
+            filtered.forEach(line => {
+                const div = document.createElement('div');
+                div.className = `log-line ${line.level}`;
+                div.id = `line-${line.index}`;
+                
+                const lineNumber = `<span style="color: #858585; margin-right: 10px;">${line.index}</span>`;
+                const copyBtn = `<button class="copy-btn" onclick="copyLine(${line.index}, this)">Copy</button>`;
+                div.innerHTML = lineNumber + escapeHtml(line.text) + copyBtn;
+                
+                logViewer.appendChild(div);
+            });
+        }
+
+        function copyLine(lineIndex, btnElement) {
+            const line = allLines.find(l => l.index === lineIndex);
+            if (!line) return;
+            
+            navigator.clipboard.writeText(line.text).then(() => {
+                btnElement.textContent = '✓ Copied';
+                btnElement.classList.add('copied');
+                
+                setTimeout(() => {
+                    btnElement.textContent = 'Copy';
+                    btnElement.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                btnElement.textContent = '✗ Failed';
+                setTimeout(() => {
+                    btnElement.textContent = 'Copy';
+                }, 2000);
+            });
+        }
+
+        function navigateError(direction) {
+            currentErrorIndex += direction;
+            
+            if (currentErrorIndex < 0) currentErrorIndex = 0;
+            if (currentErrorIndex >= errorWarningLines.length) currentErrorIndex = errorWarningLines.length - 1;
+            
+            updateNavigationInfo();
+            scrollToError();
+        }
+
+        function updateNavigationInfo() {
+            const total = errorWarningLines.length;
+            navInfo.textContent = `Error/Warning ${currentErrorIndex + 1} of ${total}`;
+            
+            prevBtn.disabled = currentErrorIndex === 0;
+            nextBtn.disabled = currentErrorIndex === total - 1;
+        }
+
+        function scrollToError() {
+            const errorLine = errorWarningLines[currentErrorIndex];
+            const element = document.getElementById(`line-${errorLine.index}`);
+            
+            if (element) {
+                document.querySelectorAll('.log-line.highlight').forEach(el => {
+                    el.classList.remove('highlight');
+                });
+                
+                element.classList.add('highlight');
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        function jumpToLastError() {
+            if (errorWarningLines.length > 0) {
+                currentErrorIndex = errorWarningLines.length - 1;
+                updateNavigationInfo();
+                scrollToError();
+            }
+        }
+
+        function goToRow() {
+            const rowNumber = parseInt(rowInput.value);
+            
+            if (!rowNumber || rowNumber < 1 || rowNumber > allLines.length) {
+                rowInput.style.borderColor = '#dc3545';
+                setTimeout(() => {
+                    rowInput.style.borderColor = '#dee2e6';
+                }, 1000);
+                return;
+            }
+
+            const element = document.getElementById(`line-${rowNumber}`);
+            
+            if (element) {
+                document.querySelectorAll('.log-line.highlight').forEach(el => {
+                    el.classList.remove('highlight');
+                });
+                
+                element.classList.add('highlight');
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                rowInput.value = '';
+            } else {
+                rowInput.style.borderColor = '#ffc107';
+                setTimeout(() => {
+                    rowInput.style.borderColor = '#dee2e6';
+                }, 1000);
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
