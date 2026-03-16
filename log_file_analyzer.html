@@ -15,37 +15,40 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 30px;
+            font-size: 16px;
+            overflow: hidden;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1800px;
             margin: 0 auto;
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
             overflow: hidden;
+            height: calc(100vh - 60px);
         }
 
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 30px;
+            padding: 25px;
             text-align: center;
         }
 
         .header h1 {
-            font-size: 28px;
+            font-size: 32px;
             margin-bottom: 10px;
         }
 
         .header p {
             opacity: 0.9;
-            font-size: 14px;
+            font-size: 16px;
         }
 
         .upload-section {
-            padding: 30px;
+            padding: 20px;
             text-align: center;
             border-bottom: 2px solid #f0f0f0;
         }
@@ -53,7 +56,7 @@
         .upload-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 15px 40px;
+            padding: 12px 35px;
             border-radius: 8px;
             border: none;
             font-size: 16px;
@@ -70,7 +73,7 @@
         .stats {
             display: flex;
             justify-content: space-around;
-            padding: 20px 30px;
+            padding: 10px 25px;
             background: #f8f9fa;
             border-bottom: 2px solid #e9ecef;
         }
@@ -80,15 +83,15 @@
         }
 
         .stat-value {
-            font-size: 24px;
+            font-size: 28px;
             font-weight: bold;
             color: #667eea;
         }
 
         .stat-label {
-            font-size: 12px;
+            font-size: 14px;
             color: #6c757d;
-            margin-top: 5px;
+            margin-top: 8px;
             text-transform: uppercase;
         }
 
@@ -101,7 +104,7 @@
         }
 
         .filters {
-            padding: 20px 30px;
+            padding: 15px 30px;
             background: #f8f9fa;
             border-bottom: 2px solid #e9ecef;
             display: flex;
@@ -163,20 +166,20 @@
 
         .log-viewer {
             padding: 30px;
-            min-height: 400px;
-            max-height: 600px;
+            min-height: 600px;
+            max-height: 1150px;
             overflow-y: auto;
             font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 13px;
-            line-height: 1.6;
+            font-size: 15px;
+            line-height: 1.8;
             background: #1e1e1e;
             color: #d4d4d4;
         }
 
         .log-line {
-            padding: 4px 8px;
-            margin: 2px 0;
-            border-radius: 4px;
+            padding: 6px 10px;
+            margin: 3px 0;
+            border-radius: 6px;
             white-space: pre-wrap;
             word-wrap: break-word;
             position: relative;
@@ -253,14 +256,14 @@
 
         .empty-state {
             text-align: center;
-            padding: 60px 20px;
+            padding: 80px 20px;
             color: #6c757d;
         }
 
         .empty-state svg {
-            width: 80px;
-            height: 80px;
-            margin-bottom: 20px;
+            width: 100px;
+            height: 100px;
+            margin-bottom: 25px;
             opacity: 0.5;
         }
 
@@ -284,20 +287,21 @@
 
         .no-errors-message {
             text-align: center;
-            padding: 40px 20px;
+            padding: 50px 20px;
             background: rgba(40, 167, 69, 0.1);
-            border-radius: 8px;
+            border-radius: 10px;
             margin: 20px;
         }
 
         .no-errors-message h3 {
             color: #28a745;
-            font-size: 24px;
-            margin-bottom: 10px;
+            font-size: 28px;
+            margin-bottom: 15px;
         }
 
         .no-errors-message p {
             color: #6c757d;
+            font-size: 16px;
         }
 
         .navigation {
@@ -386,19 +390,14 @@
         }
 
         .nav-info {
-            font-size: 14px;
+            font-size: 16px;
             color: #6c757d;
             font-weight: 600;
         }
 
-        .log-line.highlight {
-            animation: highlight 1s ease-in-out;
-            box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
-        }
-
-        @keyframes highlight {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.02); }
+        .log-line.selected {
+            background: rgba(102, 126, 234, 0.3) !important;
+            border-left: 4px solid #667eea;
         }
     </style>
 </head>
@@ -455,6 +454,12 @@
             <button class="nav-btn jump" id="lastErrorBtn">
                 Go to Last Error <span>⏭</span>
             </button>
+            <button class="nav-btn" id="bulkCopyBtn" disabled>
+                Copy Selected <span>📋</span>
+            </button>
+            <button class="nav-btn" id="downloadBtn" disabled>
+                Download Selected <span>⬇️</span>
+            </button>
             <div class="go-to-row">
                 <label style="font-size: 14px; color: #6c757d; font-weight: 600;">Go to Row:</label>
                 <input type="number" id="rowInput" min="1" placeholder="Line #">
@@ -479,6 +484,7 @@
         let searchTerm = '';
         let errorWarningLines = [];
         let currentErrorIndex = 0;
+        let selectedIndices = new Set();
 
         const fileInput = document.getElementById('fileInput');
         const logViewer = document.getElementById('logViewer');
@@ -493,6 +499,8 @@
         const lastErrorBtn = document.getElementById('lastErrorBtn');
         const rowInput = document.getElementById('rowInput');
         const goToRowBtn = document.getElementById('goToRowBtn');
+        const bulkCopyBtn = document.getElementById('bulkCopyBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
 
         fileInput.addEventListener('change', handleFileSelect);
         searchInput.addEventListener('input', handleSearch);
@@ -502,6 +510,42 @@
         goToRowBtn.addEventListener('click', goToRow);
         rowInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') goToRow();
+        });
+
+        bulkCopyBtn.addEventListener('click', () => {
+            const selectedLines = Array.from(selectedIndices).map(index => {
+                const line = allLines.find(l => l.index === index);
+                return line ? `${line.index}: ${line.text}` : '';
+            }).filter(text => text);
+            const text = selectedLines.join('\n');
+            navigator.clipboard.writeText(text).then(() => {
+                bulkCopyBtn.innerHTML = '✓ Copied <span>📋</span>';
+                setTimeout(() => {
+                    bulkCopyBtn.innerHTML = 'Copy Selected <span>📋</span>';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                bulkCopyBtn.innerHTML = '✗ Failed <span>📋</span>';
+                setTimeout(() => {
+                    bulkCopyBtn.innerHTML = 'Copy Selected <span>📋</span>';
+                }, 2000);
+            });
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            const selectedLines = Array.from(selectedIndices).sort((a, b) => a - b).map(index => {
+                const line = allLines.find(l => l.index === index);
+                return line ? `${line.index}: ${line.text}` : '';
+            }).filter(text => text);
+            const text = selectedLines.join('\n');
+            
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'selected_logs.txt';
+            a.click();
+            URL.revokeObjectURL(url);
         });
 
         document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -530,6 +574,7 @@
         function parseLog(content) {
             const lines = content.split('\n');
             allLines = [];
+            selectedIndices = new Set();
             
             let errorCount = 0;
             let warningCount = 0;
@@ -569,12 +614,15 @@
 
             errorWarningLines = allLines.filter(line => line.level === 'error' || line.level === 'warning');
             
+            navigation.style.display = 'flex';
             if (errorWarningLines.length > 0) {
-                navigation.style.display = 'flex';
                 currentErrorIndex = 0;
                 updateNavigationInfo();
             } else {
-                navigation.style.display = 'none';
+                navInfo.textContent = '';
+                prevBtn.disabled = true;
+                nextBtn.disabled = true;
+                lastErrorBtn.disabled = true;
             }
 
             renderLogs();
@@ -610,17 +658,39 @@
                 `;
             }
 
+            const fragment = document.createDocumentFragment();
+
             filtered.forEach(line => {
                 const div = document.createElement('div');
                 div.className = `log-line ${line.level}`;
                 div.id = `line-${line.index}`;
                 
                 const lineNumber = `<span style="color: #858585; margin-right: 10px;">${line.index}</span>`;
-                const copyBtn = `<button class="copy-btn" onclick="copyLine(${line.index}, this)">Copy</button>`;
-                div.innerHTML = lineNumber + escapeHtml(line.text) + copyBtn;
+                div.innerHTML = lineNumber + escapeHtml(line.text);
                 
-                logViewer.appendChild(div);
+                if (selectedIndices.has(line.index)) {
+                    div.classList.add('selected');
+                }
+                
+                fragment.appendChild(div);
+
+                div.addEventListener('click', () => {
+                    div.classList.toggle('selected');
+                    if (div.classList.contains('selected')) {
+                        selectedIndices.add(line.index);
+                    } else {
+                        selectedIndices.delete(line.index);
+                    }
+                    bulkCopyBtn.disabled = selectedIndices.size === 0;
+                    downloadBtn.disabled = selectedIndices.size === 0;
+                });
             });
+
+            logViewer.appendChild(fragment);
+
+            const visibleSelected = document.querySelectorAll('.log-line.selected');
+            bulkCopyBtn.disabled = visibleSelected.length === 0;
+            downloadBtn.disabled = visibleSelected.length === 0;
         }
 
         function copyLine(lineIndex, btnElement) {
@@ -673,6 +743,13 @@
                 
                 element.classList.add('highlight');
                 element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                // Select the row
+                document.querySelectorAll('.log-line.selected').forEach(el => el.classList.remove('selected'));
+                element.classList.add('selected');
+                selectedIndices.clear();
+                selectedIndices.add(errorLine.index);
+                bulkCopyBtn.disabled = false;
             }
         }
 
@@ -704,6 +781,13 @@
                 
                 element.classList.add('highlight');
                 element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // Select the row
+                document.querySelectorAll('.log-line.selected').forEach(el => el.classList.remove('selected'));
+                element.classList.add('selected');
+                selectedIndices.clear();
+                selectedIndices.add(rowNumber);
+                bulkCopyBtn.disabled = false;
                 
                 rowInput.value = '';
             } else {
