@@ -23,7 +23,9 @@
         .container {
             max-width: 1800px;
             margin: 0 auto;
-            background: white;
+            background: linear-gradient(180deg, rgba(0,0,0,0.2), rgba(0,0,0,0.12)), url('https://images.fastcompany.com/image/upload/f_webp,q_auto,c_fit/wp-cms/uploads/2012/08/1280-ecoli.jpg');
+            background-size: cover;
+            background-position: center top;
             border-radius: 16px;
             box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
             overflow: hidden;
@@ -31,10 +33,11 @@
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: transparent;
             color: white;
             padding: 25px;
             text-align: center;
+            background: rgba(0, 0, 0, 0.22);
         }
 
         .header h1 {
@@ -43,31 +46,33 @@
         }
 
         .header p {
-            opacity: 0.9;
+            opacity: 1.9;
             font-size: 16px;
         }
 
         .upload-section {
             padding: 20px;
             text-align: center;
-            border-bottom: 2px solid #f0f0f0;
+            border-bottom: 2px solid rgba(255,255,255,0.3);
+            background: rgba(0,0,0,0.22);
+            color: white;
         }
 
         .upload-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: #fdb813;
+            color: black;
             padding: 12px 35px;
             border-radius: 8px;
-            border: none;
+            border: 2px solid #fdb813;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: transform 0.2s, filter 0.2s;
         }
 
         .upload-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            filter: brightness(0.95);
         }
 
         .stats {
@@ -115,8 +120,9 @@
 
         .filter-btn {
             padding: 8px 16px;
-            border: 2px solid #dee2e6;
+            border: 2px solid #fdb813;
             background: white;
+            color: black;
             border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
@@ -124,44 +130,31 @@
         }
 
         .filter-btn:hover {
-            border-color: #667eea;
-            color: #667eea;
+            background: #fdd98f;
+            border-color: #fdb813;
+            color: black;
         }
 
         .filter-btn.active {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
+            background: #fdb813;
+            color: black;
+            border-color: #fdb813;
         }
 
-        .filter-btn.error {
-            border-color: #dc3545;
-            color: #dc3545;
-        }
-
-        .filter-btn.error.active {
-            background: #dc3545;
-            color: white;
-        }
-
-        .filter-btn.warning {
-            border-color: #ffc107;
-            color: #856404;
-        }
-
-        .filter-btn.warning.active {
-            background: #ffc107;
-            color: #856404;
-        }
-
+        .filter-btn.error,
+        .filter-btn.warning,
         .filter-btn.info {
-            border-color: #17a2b8;
-            color: #17a2b8;
+            border-color: #fdb813;
+            color: black;
+            font-weight: 700;
         }
 
+        .filter-btn.error.active,
+        .filter-btn.warning.active,
         .filter-btn.info.active {
-            background: #17a2b8;
-            color: white;
+            background: #fdb813;
+            color: black;
+            border-color: #fdb813;
         }
 
         .log-viewer {
@@ -195,8 +188,8 @@
             right: 8px;
             top: 50%;
             transform: translateY(-50%);
-            background: #667eea;
-            color: white;
+            background: #fdb813;
+            color: black;
             border: none;
             padding: 4px 12px;
             border-radius: 4px;
@@ -209,7 +202,7 @@
         }
 
         .copy-btn:hover {
-            background: #5568d3;
+            background: #e6a00a;
             transform: translateY(-50%) scale(1.05);
         }
 
@@ -282,7 +275,7 @@
 
         .search-box input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #fdb813;
         }
 
         .no-errors-message {
@@ -332,14 +325,14 @@
 
         .go-to-row input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #fdb813;
         }
 
         .go-to-row button {
             padding: 6px 14px;
-            border: 2px solid #17a2b8;
+            border: 2px solid #fdb813;
             background: white;
-            color: #17a2b8;
+            color: black;
             border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
@@ -348,15 +341,15 @@
         }
 
         .go-to-row button:hover {
-            background: #17a2b8;
-            color: white;
+            background: #fdb813;
+            color: black;
         }
 
         .nav-btn {
             padding: 8px 16px;
-            border: 2px solid #667eea;
+            border: 2px solid #fdb813;
             background: white;
-            color: #667eea;
+            color: black;
             border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
@@ -368,18 +361,18 @@
         }
 
         .nav-btn.jump {
-            border-color: #dc3545;
-            color: #dc3545;
+            border-color: #fdb813;
+            color: black;
         }
 
         .nav-btn.jump:hover:not(:disabled) {
-            background: #dc3545;
-            color: white;
+            background: #fdb813;
+            color: black;
         }
 
         .nav-btn:hover:not(:disabled) {
-            background: #667eea;
-            color: white;
+            background: #fdb813;
+            color: black;
         }
 
         .nav-btn:disabled {
@@ -404,14 +397,14 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📋 Log File Error Analyzer</h1>
+            <h1>📋 Promega Log File Analyzer</h1>
             <p>Upload your .log file to automatically detect and highlight errors, warnings, and other log levels</p>
         </div>
 
         <div class="upload-section">
             <button class="upload-btn" onclick="document.getElementById('fileInput').click()">Choose Log File</button>
             <input type="file" id="fileInput" accept=".log,.txt" style="display: none;">
-            <p id="fileName" style="margin-top: 15px; color: #6c757d; font-size: 14px;"></p>
+            <p id="fileName" style="margin-top: 15px; color: #ffffff; font-size: 16px;"></p>
         </div>
 
         <div class="stats" id="stats" style="display: none;">
