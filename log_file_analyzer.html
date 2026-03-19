@@ -392,6 +392,241 @@
             background: rgba(102, 126, 234, 0.3) !important;
             border-left: 4px solid #667eea;
         }
+
+        .log-line.highlight {
+            background: rgba(253, 184, 19, 0.35) !important;
+            border-left: 4px solid #fdb813;
+            box-shadow: 0 0 0 2px rgba(253, 184, 19, 0.5);
+        }
+
+        .log-line.error,
+        .log-line.warning {
+            padding-right: 155px;
+        }
+
+        .fix-btn {
+            position: absolute;
+            right: 80px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            opacity: 0;
+            transition: all 0.2s;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            white-space: nowrap;
+        }
+
+        .log-line:hover .fix-btn { opacity: 1; }
+
+        .fix-btn:hover {
+            background: #5a6fd6;
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        .fix-btn:disabled { cursor: wait; opacity: 0.7 !important; }
+
+        /* AI Side Panel */
+        .ai-panel {
+            position: fixed;
+            right: -440px;
+            top: 0;
+            width: 420px;
+            height: 100vh;
+            background: #1a1a2e;
+            border-left: 2px solid #667eea;
+            display: flex;
+            flex-direction: column;
+            transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            box-shadow: -8px 0 30px rgba(0, 0, 0, 0.6);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .ai-panel.open { right: 0; }
+
+        .ai-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-weight: 700;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .ai-panel-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 2px 6px;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+            line-height: 1;
+        }
+
+        .ai-panel-close:hover { opacity: 1; }
+
+        .ai-api-key-section {
+            padding: 12px 16px;
+            background: #16213e;
+            border-bottom: 1px solid rgba(102, 126, 234, 0.3);
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .ai-api-key-section input {
+            flex: 1;
+            padding: 7px 12px;
+            border: 1px solid rgba(102, 126, 234, 0.4);
+            border-radius: 6px;
+            font-size: 12px;
+            background: #0f3460;
+            color: #d4d4d4;
+            outline: none;
+            font-family: 'Consolas', monospace;
+        }
+
+        .ai-api-key-section input:focus { border-color: #667eea; }
+
+        .ai-api-key-section input::placeholder {
+            color: #555;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .ai-key-save-btn {
+            padding: 7px 14px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+
+        .ai-key-save-btn:hover { background: #5a6fd6; }
+        .ai-key-save-btn.saved { background: #28a745; }
+
+        .ai-panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            color: #d4d4d4;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .ai-error-line {
+            background: rgba(220, 53, 69, 0.15);
+            border-left: 4px solid #dc3545;
+            padding: 10px 14px;
+            border-radius: 0 6px 6px 0;
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+            color: #ff8888;
+            word-break: break-all;
+            margin-bottom: 18px;
+        }
+
+        .ai-response h3 {
+            color: #9ea8f5;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin: 18px 0 8px 0;
+            border-bottom: 1px solid rgba(102, 126, 234, 0.25);
+            padding-bottom: 5px;
+        }
+
+        .ai-response h3:first-child { margin-top: 0; }
+        .ai-response p { color: #c0c0c0; margin-bottom: 8px; }
+        .ai-response ul { margin: 6px 0 10px 18px; padding: 0; }
+        .ai-response li { color: #c0c0c0; margin-bottom: 4px; }
+
+        .ai-response code {
+            background: rgba(102, 126, 234, 0.2);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+            color: #9cdcfe;
+        }
+
+        .ai-response pre {
+            background: #0d1117;
+            border: 1px solid rgba(102, 126, 234, 0.25);
+            border-radius: 6px;
+            padding: 12px;
+            overflow-x: auto;
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+            color: #d4d4d4;
+            margin: 8px 0;
+            white-space: pre-wrap;
+        }
+
+        .ai-response strong { color: #e0e0e0; }
+
+        .ai-loading {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #9ea8f5;
+            padding: 20px 0;
+            font-size: 14px;
+        }
+
+        .ai-spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(102, 126, 234, 0.3);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            flex-shrink: 0;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .ai-placeholder {
+            text-align: center;
+            padding: 40px 16px;
+            color: #555;
+        }
+
+        .ai-placeholder svg {
+            width: 48px;
+            height: 48px;
+            opacity: 0.3;
+            display: block;
+            margin: 0 auto 14px;
+        }
+
+        .ai-placeholder p { font-size: 14px; line-height: 1.6; }
+
+        .ai-error-msg {
+            color: #ff8888;
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+            border-radius: 6px;
+            padding: 12px 14px;
+            font-size: 13px;
+        }
     </style>
 </head>
 <body>
@@ -467,6 +702,26 @@
                 </svg>
                 <h3>No log file loaded</h3>
                 <p>Upload a .log file to begin analysis</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Fix Side Panel -->
+    <div class="ai-panel" id="aiPanel">
+        <div class="ai-panel-header">
+            <span>✨ AI Fix Suggestion</span>
+            <button class="ai-panel-close" id="aiPanelClose">✕</button>
+        </div>
+        <div class="ai-api-key-section">
+            <input type="password" id="claudeApiKeyInput" placeholder="Paste Claude API key (sk-ant-...)">
+            <button class="ai-key-save-btn" id="saveApiKeyBtn">Save</button>
+        </div>
+        <div class="ai-panel-content" id="aiPanelContent">
+            <div class="ai-placeholder">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                </svg>
+                <p>Click <strong>✨ Fix</strong> on any error or warning line to get an AI-powered fix suggestion.</p>
             </div>
         </div>
     </div>
@@ -659,7 +914,11 @@
                 div.id = `line-${line.index}`;
                 
                 const lineNumber = `<span style="color: #858585; margin-right: 10px;">${line.index}</span>`;
-                div.innerHTML = lineNumber + escapeHtml(line.text);
+                const copyBtn = `<button class="copy-btn" onclick="copyLine(${line.index}, this)">Copy</button>`;
+                const fixBtn = (line.level === 'error' || line.level === 'warning')
+                    ? `<button class="fix-btn" onclick="suggestFix(${line.index}, this)">✨ Fix</button>`
+                    : '';
+                div.innerHTML = lineNumber + escapeHtml(line.text) + fixBtn + copyBtn;
                 
                 if (selectedIndices.has(line.index)) {
                     div.classList.add('selected');
@@ -726,13 +985,10 @@
         }
 
         function scrollToElement(element) {
-            const viewerHeight = logViewer.clientHeight;
-            const elementTop = element.offsetTop;
-            const elementHeight = element.offsetHeight;
-            logViewer.scrollTo({
-                top: elementTop - (viewerHeight / 2) + (elementHeight / 2),
-                behavior: 'smooth'
-            });
+            const viewerRect = logViewer.getBoundingClientRect();
+            const elementRect = element.getBoundingClientRect();
+            const scrollTo = logViewer.scrollTop + (elementRect.top - viewerRect.top) - (logViewer.clientHeight / 2) + (element.offsetHeight / 2);
+            logViewer.scrollTo({ top: scrollTo, behavior: 'smooth' });
         }
 
         function scrollToError() {
@@ -740,19 +996,13 @@
             const element = document.getElementById(`line-${errorLine.index}`);
 
             if (element) {
-                document.querySelectorAll('.log-line.highlight').forEach(el => {
-                    el.classList.remove('highlight');
-                });
-
-                element.classList.add('highlight');
-                scrollToElement(element);
-
-                // Select the row
+                document.querySelectorAll('.log-line.highlight').forEach(el => el.classList.remove('highlight'));
                 document.querySelectorAll('.log-line.selected').forEach(el => el.classList.remove('selected'));
-                element.classList.add('selected');
+                element.classList.add('highlight');
                 selectedIndices.clear();
                 selectedIndices.add(errorLine.index);
                 bulkCopyBtn.disabled = false;
+                scrollToElement(element);
             }
         }
 
@@ -805,6 +1055,163 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // --- AI Side Panel ---
+        const aiPanel = document.getElementById('aiPanel');
+        const aiPanelClose = document.getElementById('aiPanelClose');
+        const claudeApiKeyInput = document.getElementById('claudeApiKeyInput');
+        const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
+        const aiPanelContent = document.getElementById('aiPanelContent');
+
+        const savedKey = sessionStorage.getItem('claudeApiKey');
+        if (savedKey) claudeApiKeyInput.value = savedKey;
+
+        aiPanelClose.addEventListener('click', () => aiPanel.classList.remove('open'));
+
+        saveApiKeyBtn.addEventListener('click', () => {
+            const key = claudeApiKeyInput.value.trim();
+            if (!key) return;
+            sessionStorage.setItem('claudeApiKey', key);
+            saveApiKeyBtn.textContent = '✓ Saved';
+            saveApiKeyBtn.classList.add('saved');
+            setTimeout(() => {
+                saveApiKeyBtn.textContent = 'Save';
+                saveApiKeyBtn.classList.remove('saved');
+            }, 2000);
+        });
+
+        async function suggestFix(lineIndex, btnElement) {
+            const line = allLines.find(l => l.index === lineIndex);
+            if (!line) return;
+
+            aiPanel.classList.add('open');
+
+            const apiKey = claudeApiKeyInput.value.trim() || sessionStorage.getItem('claudeApiKey');
+
+            if (!apiKey) {
+                aiPanelContent.innerHTML = `<div class="ai-error-msg">Please enter your Claude API key above and click Save.</div>`;
+                return;
+            }
+
+            sessionStorage.setItem('claudeApiKey', apiKey);
+
+            // Context: up to 5 lines before and after
+            const contextLines = allLines
+                .filter(l => l.index >= lineIndex - 5 && l.index <= lineIndex + 5)
+                .map(l => `${l.index}: ${l.text}`)
+                .join('\n');
+
+            aiPanelContent.innerHTML = `
+                <div class="ai-error-line">${escapeHtml(line.text)}</div>
+                <div class="ai-loading"><div class="ai-spinner"></div><span>Analyzing with Claude...</span></div>`;
+
+            btnElement.textContent = '⏳';
+            btnElement.disabled = true;
+
+            try {
+                const response = await fetch('https://api.anthropic.com/v1/messages', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': apiKey,
+                        'anthropic-version': '2023-06-01',
+                        'anthropic-dangerous-direct-browser-access': 'true'
+                    },
+                    body: JSON.stringify({
+                        model: 'claude-haiku-4-5-20251001',
+                        max_tokens: 1024,
+                        messages: [{
+                            role: 'user',
+                            content: `Analyze this log error and suggest a fix. Be concise and practical.
+
+Error line:
+${line.text}
+
+Surrounding context:
+${contextLines}
+
+Respond using these exact section headers:
+### What This Error Means
+### Likely Cause
+### Suggested Fix`
+                        }]
+                    })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    throw new Error(err.error?.message || `API error ${response.status}`);
+                }
+
+                const data = await response.json();
+                const text = data.content?.[0]?.text || 'No response received.';
+
+                aiPanelContent.innerHTML = `
+                    <div class="ai-error-line">${escapeHtml(line.text)}</div>
+                    <div class="ai-response">${formatAiResponse(text)}</div>`;
+
+            } catch (err) {
+                aiPanelContent.innerHTML = `
+                    <div class="ai-error-line">${escapeHtml(line.text)}</div>
+                    <div class="ai-error-msg">Error: ${escapeHtml(err.message)}</div>`;
+            } finally {
+                btnElement.textContent = '✨ Fix';
+                btnElement.disabled = false;
+            }
+        }
+
+        function formatAiResponse(text) {
+            const lines = text.split('\n');
+            let html = '';
+            let inList = false;
+            let inPre = false;
+            let preContent = '';
+
+            for (const line of lines) {
+                if (line.trimStart().startsWith('```')) {
+                    if (!inPre) {
+                        inPre = true;
+                        preContent = '';
+                    } else {
+                        inPre = false;
+                        html += `<pre>${escapeHtml(preContent.trimEnd())}</pre>`;
+                    }
+                    continue;
+                }
+
+                if (inPre) { preContent += line + '\n'; continue; }
+
+                if (inList && !line.match(/^[-*•] |^\d+\. /)) {
+                    html += '</ul>';
+                    inList = false;
+                }
+
+                if (line.match(/^#{1,3} /)) {
+                    html += `<h3>${formatInline(line.replace(/^#{1,3} /, ''))}</h3>`;
+                } else if (line.match(/^[-*•] /)) {
+                    if (!inList) { html += '<ul>'; inList = true; }
+                    html += `<li>${formatInline(line.replace(/^[-*•] /, ''))}</li>`;
+                } else if (line.match(/^\d+\. /)) {
+                    if (!inList) { html += '<ul>'; inList = true; }
+                    html += `<li>${formatInline(line.replace(/^\d+\. /, ''))}</li>`;
+                } else if (line.trim() === '') {
+                    if (inList) { html += '</ul>'; inList = false; }
+                } else {
+                    html += `<p>${formatInline(line)}</p>`;
+                }
+            }
+
+            if (inList) html += '</ul>';
+            return html;
+        }
+
+        function formatInline(text) {
+            text = escapeHtml(text);
+            text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+            text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
+            return text;
         }
     </script>
 </body>
