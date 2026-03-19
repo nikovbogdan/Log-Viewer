@@ -30,6 +30,11 @@
             box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
             overflow: hidden;
             height: calc(100vh - 60px);
+            transition: margin-right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.ai-open .container {
+            margin-right: 420px;
         }
 
         .header {
@@ -401,21 +406,21 @@
 
         .log-line.error,
         .log-line.warning {
-            padding-right: 155px;
+            padding-right: 100px;
         }
 
         .fix-btn {
             position: absolute;
-            right: 80px;
+            right: 8px;
             top: 50%;
             transform: translateY(-50%);
             background: #667eea;
             color: white;
             border: none;
-            padding: 4px 10px;
+            padding: 5px 14px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 11px;
+            font-size: 13px;
             font-weight: 600;
             opacity: 0;
             transition: all 0.2s;
@@ -914,11 +919,10 @@
                 div.id = `line-${line.index}`;
                 
                 const lineNumber = `<span style="color: #858585; margin-right: 10px;">${line.index}</span>`;
-                const copyBtn = `<button class="copy-btn" onclick="copyLine(${line.index}, this)">Copy</button>`;
                 const fixBtn = (line.level === 'error' || line.level === 'warning')
                     ? `<button class="fix-btn" onclick="suggestFix(${line.index}, this)">✨ Fix</button>`
                     : '';
-                div.innerHTML = lineNumber + escapeHtml(line.text) + fixBtn + copyBtn;
+                div.innerHTML = lineNumber + escapeHtml(line.text) + fixBtn;
                 
                 if (selectedIndices.has(line.index)) {
                     div.classList.add('selected');
@@ -1067,7 +1071,10 @@
         const savedKey = sessionStorage.getItem('claudeApiKey');
         if (savedKey) claudeApiKeyInput.value = savedKey;
 
-        aiPanelClose.addEventListener('click', () => aiPanel.classList.remove('open'));
+        aiPanelClose.addEventListener('click', () => {
+            aiPanel.classList.remove('open');
+            document.body.classList.remove('ai-open');
+        });
 
         saveApiKeyBtn.addEventListener('click', () => {
             const key = claudeApiKeyInput.value.trim();
@@ -1086,6 +1093,7 @@
             if (!line) return;
 
             aiPanel.classList.add('open');
+            document.body.classList.add('ai-open');
 
             const apiKey = claudeApiKeyInput.value.trim() || sessionStorage.getItem('claudeApiKey');
 
