@@ -701,6 +701,102 @@
             padding: 12px 14px;
             font-size: 13px;
         }
+
+        /* Chat input area */
+        .ai-chat-input-area {
+            display: none;
+            flex-shrink: 0;
+            align-items: flex-end;
+            gap: 8px;
+            padding: 12px 16px;
+            background: #16213e;
+            border-top: 1px solid rgba(102, 126, 234, 0.3);
+        }
+
+        .ai-chat-input-area.visible { display: flex; }
+
+        .ai-chat-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid rgba(102, 126, 234, 0.4);
+            border-radius: 8px;
+            background: #0f3460;
+            color: #d4d4d4;
+            font-size: 13px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            resize: none;
+            outline: none;
+            line-height: 1.5;
+            max-height: 96px;
+            overflow-y: auto;
+        }
+
+        .ai-chat-input:focus { border-color: #667eea; }
+
+        .ai-chat-input::placeholder { color: #555; }
+
+        .ai-chat-send-btn {
+            padding: 8px 14px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+
+        .ai-chat-send-btn:hover:not(:disabled) { background: #5a6fd6; }
+        .ai-chat-send-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+        /* Chat message bubbles */
+        .ai-msg-user {
+            display: flex;
+            justify-content: flex-end;
+            margin: 14px 0 6px;
+        }
+
+        .ai-msg-user .ai-msg-bubble {
+            background: #667eea;
+            color: white;
+            padding: 8px 13px;
+            border-radius: 14px 14px 2px 14px;
+            max-width: 88%;
+            font-size: 13px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .ai-msg-assistant {
+            margin: 6px 0 14px;
+        }
+
+        .ai-msg-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #667eea;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .ai-chat-divider {
+            border: none;
+            border-top: 1px solid rgba(102, 126, 234, 0.2);
+            margin: 18px 0 14px;
+        }
+
+        .ai-msg-loading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #9ea8f5;
+            font-size: 13px;
+            padding: 6px 0 10px;
+        }
     </style>
 </head>
 <body>
@@ -806,6 +902,10 @@
                 </svg>
                 <p>Click <strong>✨ Fix</strong> on any error or warning line to get an AI-powered fix suggestion.</p>
             </div>
+        </div>
+        <div class="ai-chat-input-area" id="aiChatInputArea">
+            <textarea id="aiChatInput" class="ai-chat-input" placeholder="Ask a follow-up question…" rows="2"></textarea>
+            <button class="ai-chat-send-btn" id="aiChatSendBtn" title="Send (Enter)">Send ↑</button>
         </div>
     </div>
 
@@ -1146,6 +1246,9 @@
         const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
         const aiPanelContent = document.getElementById('aiPanelContent');
         const aiKeyInputRow = document.getElementById('aiKeyInputRow');
+        const aiChatInputArea = document.getElementById('aiChatInputArea');
+        const aiChatInput = document.getElementById('aiChatInput');
+        const aiChatSendBtn = document.getElementById('aiChatSendBtn');
 
         const AI_PROVIDERS = {
             openai:    { name: 'OpenAI',      placeholder: 'Paste OpenAI API key (sk-...)',     storageKey: 'aiApiKey_openai',    loadingText: 'Analyzing with GPT...' },
@@ -1157,6 +1260,7 @@
 
         let currentProvider = sessionStorage.getItem('aiActiveProvider') || null;
         let pendingFix = null;
+        let chatHistory = [];
 
         function updateProviderButtons() {
             document.querySelectorAll('.ai-provider-btn').forEach(btn => {
@@ -1217,7 +1321,8 @@
             }, 500);
         });
 
-        async function callProviderAPI(provider, apiKey, prompt) {
+        // messages: [{role: 'user'|'assistant', content: string}, ...]
+        async function callProviderAPI(provider, apiKey, messages) {
             if (provider === 'anthropic') {
                 const res = await fetch('https://api.anthropic.com/v1/messages', {
                     method: 'POST',
@@ -1227,17 +1332,22 @@
                         'anthropic-version': '2023-06-01',
                         'anthropic-dangerous-direct-browser-access': 'true'
                     },
-                    body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1024, messages: [{ role: 'user', content: prompt }] })
+                    body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1024, messages })
                 });
                 if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error?.message || `API error ${res.status}`); }
                 const data = await res.json();
                 return data.content?.[0]?.text || 'No response received.';
             }
             if (provider === 'google') {
+                // Google uses 'model' role for assistant turns
+                const contents = messages.map(m => ({
+                    role: m.role === 'assistant' ? 'model' : 'user',
+                    parts: [{ text: m.content }]
+                }));
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    body: JSON.stringify({ contents })
                 });
                 if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error?.message || `API error ${res.status}`); }
                 const data = await res.json();
@@ -1257,7 +1367,7 @@
             const res = await fetch(endpoints[provider], {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-                body: JSON.stringify({ model: models[provider], max_tokens: 1024, messages: [{ role: 'user', content: prompt }] })
+                body: JSON.stringify({ model: models[provider], max_tokens: 1024, messages })
             });
             if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error?.message || `API error ${res.status}`); }
             const data = await res.json();
@@ -1279,6 +1389,10 @@
                 aiPanelContent.innerHTML = `<div class="ai-error-msg">Please select an AI provider and save your API key above.</div>`;
                 return;
             }
+
+            // Reset chat state for the new error
+            chatHistory = [];
+            aiChatInputArea.classList.remove('visible');
 
             const contextLines = allLines
                 .filter(l => l.index >= lineIndex - 5 && l.index <= lineIndex + 5)
@@ -1306,12 +1420,22 @@ Respond using these exact section headers:
 ### Likely Cause
 ### Suggested Fix`;
 
+            const messages = [{ role: 'user', content: prompt }];
+
             try {
-                const text = await callProviderAPI(provider, apiKey, prompt);
+                const text = await callProviderAPI(provider, apiKey, messages);
+
+                chatHistory = [
+                    { role: 'user', content: prompt },
+                    { role: 'assistant', content: text }
+                ];
 
                 aiPanelContent.innerHTML = `
                     <div class="ai-error-line">${escapeHtml(line.text)}</div>
                     <div class="ai-response">${formatAiResponse(text)}</div>`;
+
+                aiChatInputArea.classList.add('visible');
+                aiChatInput.value = '';
 
             } catch (err) {
                 aiPanelContent.innerHTML = `
@@ -1322,6 +1446,61 @@ Respond using these exact section headers:
                 btnElement.disabled = false;
             }
         }
+
+        async function sendChatMessage() {
+            const userText = aiChatInput.value.trim();
+            if (!userText) return;
+
+            const provider = currentProvider;
+            const apiKey = provider ? sessionStorage.getItem(AI_PROVIDERS[provider].storageKey) || '' : '';
+            if (!provider || !apiKey) return;
+
+            aiChatInput.value = '';
+            aiChatSendBtn.disabled = true;
+
+            // Append user bubble
+            const userHtml = `<div class="ai-msg-user"><div class="ai-msg-bubble">${escapeHtml(userText)}</div></div>`;
+            const loadingId = 'chatLoad_' + Date.now();
+            const loadingHtml = `<div id="${loadingId}" class="ai-msg-loading"><div class="ai-spinner"></div><span>Thinking…</span></div>`;
+            aiPanelContent.insertAdjacentHTML('beforeend', '<hr class="ai-chat-divider">' + userHtml + loadingHtml);
+            aiPanelContent.scrollTop = aiPanelContent.scrollHeight;
+
+            chatHistory.push({ role: 'user', content: userText });
+
+            try {
+                const text = await callProviderAPI(provider, apiKey, chatHistory);
+                chatHistory.push({ role: 'assistant', content: text });
+
+                document.getElementById(loadingId)?.remove();
+                const aiHtml = `<div class="ai-msg-assistant"><div class="ai-msg-label">✨ AI</div><div class="ai-response">${formatAiResponse(text)}</div></div>`;
+                aiPanelContent.insertAdjacentHTML('beforeend', aiHtml);
+                aiPanelContent.scrollTop = aiPanelContent.scrollHeight;
+            } catch (err) {
+                chatHistory.pop();
+                document.getElementById(loadingId)?.remove();
+                const errHtml = `<div class="ai-error-msg">Error: ${escapeHtml(err.message)}</div>`;
+                aiPanelContent.insertAdjacentHTML('beforeend', errHtml);
+                aiPanelContent.scrollTop = aiPanelContent.scrollHeight;
+            } finally {
+                aiChatSendBtn.disabled = false;
+                aiChatInput.focus();
+            }
+        }
+
+        aiChatSendBtn.addEventListener('click', sendChatMessage);
+
+        aiChatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendChatMessage();
+            }
+        });
+
+        // Auto-resize textarea up to max-height
+        aiChatInput.addEventListener('input', () => {
+            aiChatInput.style.height = 'auto';
+            aiChatInput.style.height = Math.min(aiChatInput.scrollHeight, 96) + 'px';
+        });
 
         function formatAiResponse(text) {
             const lines = text.split('\n');
