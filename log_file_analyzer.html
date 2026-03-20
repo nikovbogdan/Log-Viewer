@@ -30,6 +30,8 @@
             box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
             overflow: hidden;
             height: calc(100vh - 60px);
+            display: flex;
+            flex-direction: column;
             transition: margin-right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -163,10 +165,11 @@
         }
 
         .log-viewer {
-            padding: 30px;
-            min-height: 600px;
-            max-height: 1150px;
+            padding: 0;
+            flex: 1;
+            min-height: 0;
             overflow-y: auto;
+            position: relative;
             font-family: 'Consolas', 'Monaco', monospace;
             font-size: 15px;
             line-height: 1.8;
@@ -605,6 +608,14 @@
             line-height: 1.6;
         }
 
+        .ai-full-line-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #666;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
         .ai-error-line {
             background: rgba(220, 53, 69, 0.15);
             border-left: 4px solid #dc3545;
@@ -614,7 +625,9 @@
             font-size: 12px;
             color: #ff8888;
             word-break: break-all;
+            white-space: pre-wrap;
             margin-bottom: 18px;
+            user-select: text;
         }
 
         .ai-response h3 {
@@ -797,6 +810,31 @@
             font-size: 13px;
             padding: 6px 0 10px;
         }
+        .loading-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 20px;
+            background: #1e1e1e;
+            color: #aaa;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            border-top: 1px solid #333;
+        }
+        .loading-bar-track {
+            flex: 1;
+            height: 5px;
+            background: #333;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .loading-bar-fill {
+            height: 100%;
+            background: #fdb813;
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.08s linear;
+        }
     </style>
 </head>
 <body>
@@ -865,6 +903,13 @@
             </div>
         </div>
 
+        <div id="loadingBar" class="loading-bar" style="display:none">
+            <span id="loadingBarText">Parsing...</span>
+            <div class="loading-bar-track">
+                <div class="loading-bar-fill" id="loadingBarFill"></div>
+            </div>
+        </div>
+
         <div class="log-viewer" id="logViewer">
             <div class="empty-state">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -911,11 +956,21 @@
 
     <script>
         let allLines = [];
+        let filteredLines = [];
         let currentFilter = 'all';
         let searchTerm = '';
         let errorWarningLines = [];
         let currentErrorIndex = 0;
         let selectedIndices = new Set();
+        let highlightedLine = null;
+
+        const ROW_HEIGHT = 45;
+        const VS_BUFFER = 15;
+        let vsInner = null;
+        let vsScrollHandler = null;
+        let vsLastStart = -1;
+        let vsLastEnd = -1;
+        let searchDebounceTimer = null;
 
         const fileInput = document.getElementById('fileInput');
         const logViewer = document.getElementById('logViewer');
@@ -932,6 +987,19 @@
         const goToRowBtn = document.getElementById('goToRowBtn');
         const bulkCopyBtn = document.getElementById('bulkCopyBtn');
         const downloadBtn = document.getElementById('downloadBtn');
+
+        const loadingBar = document.getElementById('loadingBar');
+        const loadingBarFill = document.getElementById('loadingBarFill');
+        const loadingBarText = document.getElementById('loadingBarText');
+
+        function showProgress(pct) {
+            loadingBar.style.display = 'flex';
+            loadingBarFill.style.width = Math.round(pct * 100) + '%';
+            loadingBarText.textContent = 'Parsing... ' + Math.round(pct * 100) + '%';
+        }
+        function hideProgress() {
+            loadingBar.style.display = 'none';
+        }
 
         fileInput.addEventListener('change', handleFileSelect);
         searchInput.addEventListener('input', handleSearch);
@@ -1002,38 +1070,41 @@
             reader.readAsText(file);
         }
 
-        function parseLog(content) {
-            const lines = content.split('\n');
+        async function parseLog(content) {
+            const rawLines = content.split('\n');
             allLines = [];
             selectedIndices = new Set();
-            
+            highlightedLine = null;
+
             let errorCount = 0;
             let warningCount = 0;
             let infoCount = 0;
 
-            lines.forEach((line, index) => {
-                if (!line.trim()) return;
+            showProgress(0);
+            logViewer.innerHTML = '';
 
-                let level = 'debug';
-                const lineLower = line.toLowerCase();
-
-                if (lineLower.includes('error') || lineLower.includes('fatal') || lineLower.includes('exception')) {
-                    level = 'error';
-                    errorCount++;
-                } else if (lineLower.includes('warn')) {
-                    level = 'warning';
-                    warningCount++;
-                } else if (lineLower.includes('info')) {
-                    level = 'info';
-                    infoCount++;
+            const CHUNK = 50000;
+            for (let i = 0; i < rawLines.length; i += CHUNK) {
+                const end = Math.min(i + CHUNK, rawLines.length);
+                for (let j = i; j < end; j++) {
+                    const line = rawLines[j];
+                    if (!line.trim()) continue;
+                    let level = 'debug';
+                    const ll = line.toLowerCase();
+                    if (ll.includes('error') || ll.includes('fatal') || ll.includes('exception')) {
+                        level = 'error'; errorCount++;
+                    } else if (ll.includes('warn')) {
+                        level = 'warning'; warningCount++;
+                    } else if (ll.includes('info')) {
+                        level = 'info'; infoCount++;
+                    }
+                    allLines.push({ text: line, level, index: j + 1 });
                 }
+                showProgress(end / rawLines.length);
+                await new Promise(r => setTimeout(r, 0));
+            }
 
-                allLines.push({
-                    text: line,
-                    level: level,
-                    index: index + 1
-                });
-            });
+            hideProgress();
 
             document.getElementById('totalLines').textContent = allLines.length;
             document.getElementById('errorCount').textContent = errorCount;
@@ -1043,8 +1114,8 @@
             stats.style.display = 'flex';
             filters.style.display = 'flex';
 
-            errorWarningLines = allLines.filter(line => line.level === 'error' || line.level === 'warning');
-            
+            errorWarningLines = allLines.filter(l => l.level === 'error' || l.level === 'warning');
+
             navigation.style.display = 'flex';
             if (errorWarningLines.length > 0) {
                 currentErrorIndex = 0;
@@ -1061,70 +1132,103 @@
 
         function handleSearch(e) {
             searchTerm = e.target.value.toLowerCase();
-            renderLogs();
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(renderLogs, 120);
         }
 
         function renderLogs() {
-            logViewer.innerHTML = '';
+            if (vsScrollHandler) {
+                logViewer.removeEventListener('scroll', vsScrollHandler);
+                vsScrollHandler = null;
+            }
+            vsLastStart = -1;
+            vsLastEnd = -1;
 
-            const filtered = allLines.filter(line => {
+            filteredLines = allLines.filter(line => {
                 const matchesFilter = currentFilter === 'all' || line.level === currentFilter;
-                const matchesSearch = searchTerm === '' || line.text.toLowerCase().includes(searchTerm);
+                const matchesSearch = !searchTerm || line.text.toLowerCase().includes(searchTerm);
                 return matchesFilter && matchesSearch;
             });
 
-            if (filtered.length === 0) {
-                logViewer.innerHTML = '<div class="empty-state"><h3>No matching logs found</h3><p>Try adjusting your filters or search term</p></div>';
+            logViewer.innerHTML = '';
+
+            if (filteredLines.length === 0) {
+                logViewer.innerHTML = '<div class="empty-state" style="padding:80px 20px"><h3>No matching logs found</h3><p>Try adjusting your filters or search term</p></div>';
                 return;
             }
 
-            const hasErrorsOrWarnings = allLines.some(line => line.level === 'error' || line.level === 'warning');
-            
+            const hasErrorsOrWarnings = allLines.some(l => l.level === 'error' || l.level === 'warning');
             if (!hasErrorsOrWarnings) {
-                logViewer.innerHTML = `
-                    <div class="no-errors-message">
-                        <h3>✅ No errors here</h3>
-                        <p>Your log file looks clean - no errors or warnings detected!</p>
-                    </div>
-                `;
+                const msg = document.createElement('div');
+                msg.className = 'no-errors-message';
+                msg.innerHTML = '<h3>✅ No errors here</h3><p>Your log file looks clean - no errors or warnings detected!</p>';
+                logViewer.appendChild(msg);
             }
 
-            const fragment = document.createDocumentFragment();
+            vsInner = document.createElement('div');
+            vsInner.style.position = 'relative';
+            vsInner.style.height = (filteredLines.length * ROW_HEIGHT) + 'px';
+            logViewer.appendChild(vsInner);
 
-            filtered.forEach(line => {
+            renderVisibleRows();
+
+            vsScrollHandler = renderVisibleRows;
+            logViewer.addEventListener('scroll', vsScrollHandler);
+
+            bulkCopyBtn.disabled = selectedIndices.size === 0;
+            downloadBtn.disabled = selectedIndices.size === 0;
+        }
+
+        function renderVisibleRows() {
+            if (!vsInner || !filteredLines.length) return;
+
+            const scrollTop = logViewer.scrollTop;
+            const viewportH = logViewer.clientHeight;
+
+            const startIdx = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - VS_BUFFER);
+            const endIdx = Math.min(filteredLines.length - 1, Math.ceil((scrollTop + viewportH) / ROW_HEIGHT) + VS_BUFFER);
+
+            if (startIdx === vsLastStart && endIdx === vsLastEnd) return;
+            vsLastStart = startIdx;
+            vsLastEnd = endIdx;
+
+            while (vsInner.firstChild) vsInner.removeChild(vsInner.firstChild);
+
+            const fragment = document.createDocumentFragment();
+            for (let i = startIdx; i <= endIdx; i++) {
+                const line = filteredLines[i];
                 const div = document.createElement('div');
                 div.className = `log-line ${line.level}`;
                 div.id = `line-${line.index}`;
-                
+                div.style.position = 'absolute';
+                div.style.top = (i * ROW_HEIGHT) + 'px';
+                div.style.left = '0';
+                div.style.right = '0';
+                div.style.height = ROW_HEIGHT + 'px';
+                div.style.overflow = 'hidden';
+                div.style.whiteSpace = 'nowrap';
+                div.style.textOverflow = 'ellipsis';
+
                 const lineNumber = `<span style="color: #858585; margin-right: 10px;">${line.index}</span>`;
                 const fixBtn = (line.level === 'error' || line.level === 'warning')
                     ? `<button class="fix-btn" onclick="suggestFix(${line.index}, this)">✨ Fix</button>`
                     : '';
                 div.innerHTML = lineNumber + escapeHtml(line.text) + fixBtn;
-                
-                if (selectedIndices.has(line.index)) {
-                    div.classList.add('selected');
-                }
-                
-                fragment.appendChild(div);
+
+                if (selectedIndices.has(line.index)) div.classList.add('selected');
+                if (highlightedLine === line.index) div.classList.add('highlight');
 
                 div.addEventListener('click', () => {
                     div.classList.toggle('selected');
-                    if (div.classList.contains('selected')) {
-                        selectedIndices.add(line.index);
-                    } else {
-                        selectedIndices.delete(line.index);
-                    }
+                    if (div.classList.contains('selected')) selectedIndices.add(line.index);
+                    else selectedIndices.delete(line.index);
                     bulkCopyBtn.disabled = selectedIndices.size === 0;
                     downloadBtn.disabled = selectedIndices.size === 0;
                 });
-            });
 
-            logViewer.appendChild(fragment);
-
-            const visibleSelected = document.querySelectorAll('.log-line.selected');
-            bulkCopyBtn.disabled = visibleSelected.length === 0;
-            downloadBtn.disabled = visibleSelected.length === 0;
+                fragment.appendChild(div);
+            }
+            vsInner.appendChild(fragment);
         }
 
         function copyLine(lineIndex, btnElement) {
@@ -1166,25 +1270,22 @@
             nextBtn.disabled = currentErrorIndex === total - 1;
         }
 
-        function scrollToElement(element) {
-            const viewerRect = logViewer.getBoundingClientRect();
-            const elementRect = element.getBoundingClientRect();
-            const scrollTo = logViewer.scrollTop + (elementRect.top - viewerRect.top) - (logViewer.clientHeight / 2) + (element.offsetHeight / 2);
-            logViewer.scrollTo({ top: scrollTo, behavior: 'smooth' });
+        function scrollToVirtualRow(filteredIdx) {
+            const targetTop = filteredIdx * ROW_HEIGHT - logViewer.clientHeight / 2 + ROW_HEIGHT / 2;
+            logViewer.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
         }
 
         function scrollToError() {
             const errorLine = errorWarningLines[currentErrorIndex];
-            const element = document.getElementById(`line-${errorLine.index}`);
+            highlightedLine = errorLine.index;
+            selectedIndices.clear();
+            selectedIndices.add(errorLine.index);
+            bulkCopyBtn.disabled = false;
 
-            if (element) {
-                document.querySelectorAll('.log-line.highlight').forEach(el => el.classList.remove('highlight'));
-                document.querySelectorAll('.log-line.selected').forEach(el => el.classList.remove('selected'));
-                element.classList.add('highlight');
-                selectedIndices.clear();
-                selectedIndices.add(errorLine.index);
-                bulkCopyBtn.disabled = false;
-                scrollToElement(element);
+            const filteredIdx = filteredLines.findIndex(l => l.index === errorLine.index);
+            if (filteredIdx >= 0) {
+                vsLastStart = -1; vsLastEnd = -1;
+                scrollToVirtualRow(filteredIdx);
             }
         }
 
@@ -1198,39 +1299,30 @@
 
         function goToRow() {
             const rowNumber = parseInt(rowInput.value);
-            
+
             if (!rowNumber || rowNumber < 1 || rowNumber > allLines.length) {
                 rowInput.style.borderColor = '#dc3545';
-                setTimeout(() => {
-                    rowInput.style.borderColor = '';
-                }, 1000);
+                setTimeout(() => { rowInput.style.borderColor = ''; }, 1000);
                 return;
             }
 
-            const element = document.getElementById(`line-${rowNumber}`);
-            
-            if (element) {
-                document.querySelectorAll('.log-line.highlight').forEach(el => {
-                    el.classList.remove('highlight');
-                });
-                
-                element.classList.add('highlight');
-                scrollToElement(element);
-
-                // Select the row
-                document.querySelectorAll('.log-line.selected').forEach(el => el.classList.remove('selected'));
-                element.classList.add('selected');
+            const filteredIdx = filteredLines.findIndex(l => l.index === rowNumber);
+            if (filteredIdx >= 0) {
+                highlightedLine = rowNumber;
                 selectedIndices.clear();
                 selectedIndices.add(rowNumber);
                 bulkCopyBtn.disabled = false;
-                
-                rowInput.value = '';
+                vsLastStart = -1; vsLastEnd = -1;
+                scrollToVirtualRow(filteredIdx);
             } else {
                 rowInput.style.borderColor = '#ffc107';
-                setTimeout(() => {
-                    rowInput.style.borderColor = '';
-                }, 1000);
+                setTimeout(() => { rowInput.style.borderColor = ''; }, 1000);
             }
+            rowInput.value = '';
+        }
+
+        function fullLineHtml(text) {
+            return `<div class="ai-full-line-label">Full log line</div><div class="ai-error-line">${escapeHtml(text)}</div>`;
         }
 
         function escapeHtml(text) {
@@ -1386,7 +1478,8 @@
 
             if (!provider || !apiKey) {
                 pendingFix = { lineIndex, btnElement };
-                aiPanelContent.innerHTML = `<div class="ai-error-msg">Please select an AI provider and save your API key above.</div>`;
+                aiPanelContent.innerHTML = fullLineHtml(line.text) +
+                    `<div class="ai-error-msg">Please select an AI provider and save your API key above.</div>`;
                 return;
             }
 
@@ -1400,9 +1493,8 @@
                 .join('\n');
 
             const loadingText = AI_PROVIDERS[provider].loadingText;
-            aiPanelContent.innerHTML = `
-                <div class="ai-error-line">${escapeHtml(line.text)}</div>
-                <div class="ai-loading"><div class="ai-spinner"></div><span>${loadingText}</span></div>`;
+            aiPanelContent.innerHTML = fullLineHtml(line.text) +
+                `<div class="ai-loading"><div class="ai-spinner"></div><span>${loadingText}</span></div>`;
 
             btnElement.textContent = '⏳';
             btnElement.disabled = true;
@@ -1430,17 +1522,15 @@ Respond using these exact section headers:
                     { role: 'assistant', content: text }
                 ];
 
-                aiPanelContent.innerHTML = `
-                    <div class="ai-error-line">${escapeHtml(line.text)}</div>
-                    <div class="ai-response">${formatAiResponse(text)}</div>`;
+                aiPanelContent.innerHTML = fullLineHtml(line.text) +
+                    `<div class="ai-response">${formatAiResponse(text)}</div>`;
 
                 aiChatInputArea.classList.add('visible');
                 aiChatInput.value = '';
 
             } catch (err) {
-                aiPanelContent.innerHTML = `
-                    <div class="ai-error-line">${escapeHtml(line.text)}</div>
-                    <div class="ai-error-msg">Error: ${escapeHtml(err.message)}</div>`;
+                aiPanelContent.innerHTML = fullLineHtml(line.text) +
+                    `<div class="ai-error-msg">Error: ${escapeHtml(err.message)}</div>`;
             } finally {
                 btnElement.textContent = '✨ Fix';
                 btnElement.disabled = false;
