@@ -1114,7 +1114,7 @@
             stats.style.display = 'flex';
             filters.style.display = 'flex';
 
-            errorWarningLines = allLines.filter(l => l.level === 'error' || l.level === 'warning');
+            errorWarningLines = allLines.filter(l => l.level === 'error');
 
             navigation.style.display = 'flex';
             if (errorWarningLines.length > 0) {
@@ -1264,7 +1264,7 @@
 
         function updateNavigationInfo() {
             const total = errorWarningLines.length;
-            navInfo.textContent = `Error/Warning ${currentErrorIndex + 1} of ${total}`;
+            navInfo.textContent = `Error ${currentErrorIndex + 1} of ${total}`;
             
             prevBtn.disabled = currentErrorIndex === 0;
             nextBtn.disabled = currentErrorIndex === total - 1;
